@@ -47,21 +47,30 @@ class DeepQ(object):
 
     def construct_q_network(self):
         # Uses the network architecture found in DeepMind paper
+        #define model as sequential
         self.model = Sequential()
+        #adding convolutional2D layers
+        #Filter Number:32, Kernel Size:8x8 Input Image:84x84x3 
+        #Output is 84x84x32
         self.model.add(Convolution2D(32, 8, 8, subsample=(
             4, 4), input_shape=(84, 84, NUM_FRAMES)))
+        #Activation function is relu ( linear for x>0)
         self.model.add(Activation('relu'))
         self.model.add(Convolution2D(64, 4, 4, subsample=(2, 2)))
         self.model.add(Activation('relu'))
         self.model.add(Convolution2D(64, 3, 3))
         self.model.add(Activation('relu'))
+        #Flattens the model, instead of 3 parameters (84,84,64) it had their pollaplasiasmos
         self.model.add(Flatten())
+        #regular layer NN
         self.model.add(Dense(512))
         self.model.add(Activation('relu'))
         self.model.add(Dense(NUM_ACTIONS))
+        #compile with Adam, loss rate 0.00001 and loss = mse (mean squared error)
         self.model.compile(loss='mse', optimizer=Adam(lr=0.00001))
 
         # Creates a target network as described in DeepMind paper
+        #creating a second neurwniko diktuo for storing the weights
         self.target_model = Sequential()
         self.target_model.add(Convolution2D(32, 8, 8, subsample=(4, 4),
                                             input_shape=(84, 84, NUM_FRAMES)))
@@ -75,6 +84,7 @@ class DeepQ(object):
         self.model.add(Activation('relu'))
         self.target_model.add(Dense(NUM_ACTIONS))
         self.target_model.compile(loss='mse', optimizer=Adam(lr=0.00001))
+        #storing the weights
         self.target_model.set_weights(self.model.get_weights())
 
         print("Successfully constructed networks.")
@@ -82,24 +92,30 @@ class DeepQ(object):
     def predict_movement(self, data, epsilon):
         """Predict movement of game controler where is epsilon
         probability randomly move."""
+        #Generates output predictions for the input samples.
         q_actions = self.model.predict(
             data.reshape(1, 84, 84, NUM_FRAMES), batch_size=1)
         opt_policy = np.argmax(q_actions)
         rand_val = np.random.random()
+        #if random_number < epsilon pare allo action
         if rand_val < epsilon:
             opt_policy = np.random.randint(0, NUM_ACTIONS)
         return opt_policy, q_actions[0, opt_policy]
 
     def train(self, s_batch, a_batch, r_batch, d_batch, s2_batch, observation_num):
         """Trains network to fit given parameters"""
+        #arxikopoioume me midenika tous pinakes
         batch_size = s_batch.shape[0]
         targets = np.zeros((batch_size, NUM_ACTIONS))
 
         for i in range(batch_size):
+            #predict sto model
             targets[i] = self.model.predict(
                 s_batch[i].reshape(1, 84, 84, NUM_FRAMES), batch_size=1)
+            #predict sto target_model
             fut_action = self.target_model.predict(
                 s2_batch[i].reshape(1, 84, 84, NUM_FRAMES), batch_size=1)
+            #wtf is this plz help
             targets[i, a_batch[i]] = r_batch[i]
             if d_batch[i] == False:
                 targets[i, a_batch[i]] += DECAY_RATE * np.max(fut_action)
